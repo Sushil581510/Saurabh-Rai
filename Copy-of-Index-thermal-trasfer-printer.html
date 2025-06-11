@@ -1,0 +1,2581 @@
+﻿es<html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BizBazaar.com - Beverage Equipment Marketplace</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+.icon { width: 1.25rem; height: 1.25rem; }
+.icon-sm { width: 1rem; height: 1rem; }
+.icon-lg { width: 1.5rem; height: 1.5rem; }
+.icon-xl { width: 2rem; height: 2rem; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Ensure proper text wrapping and overflow handling */
+.truncate-lines-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Prevent layout shifts from long text */
+.text-balance {
+  text-wrap: balance;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Image loading placeholder */
+.img-placeholder {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0f0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Fix breadcrumb overlap */
+.breadcrumb-nav {
+  min-height: 3rem;
+  display: flex;
+  align-items: center;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Better text overflow for seller info */
+.seller-info-text {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Ensure buttons don't overflow */
+.btn-container {
+  min-width: 0;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body class="bg-gray-50">
+<div id="app"></div>
+<script>
+// App state
+window.appState = window.appState || {
+currentRoute: '/',
+viewMode: 'grid',
+searchQuery: '',
+isMenuOpen: false,
+filters: {}
+};
+
+
+// Helper functions
+function getSellerById(sellerId, sellers) {
+return sellers.find(s => s.id === sellerId);
+}
+
+
+function getCategoryById(categoryId, categories) {
+return categories.find(c => c.id === categoryId);
+}
+
+
+function getProductsByCategoryId(categoryId, products) {
+return products.filter(p => p.categoryId === categoryId);
+}
+
+
+function getProductsBySellerId(sellerId, products) {
+return products.filter(p => p.sellerId === sellerId);
+}
+
+
+function truncateText(text, maxLength) {
+if (!text) return '';
+return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+
+
+function formatCurrency(price) {
+if (price === 0) return 'Ask for Price';
+return new Intl.NumberFormat('en-IN', {
+style: 'currency',
+currency: 'INR',
+maximumFractionDigits: 0
+}).format(price);
+}
+
+
+function getCurrentRoute() {
+try {
+return window.location.hash.slice(1) || '/';
+} catch (error) {
+console.error('Error getting current route:', error);
+return '/';
+}
+}
+
+
+function navigate(path) {
+try {
+window.location.hash = path;
+window.appState = { ...window.appState, currentRoute: path };
+render();
+} catch (error) {
+console.error('Navigation error:', error);
+}
+}
+
+
+function setState(newState) {
+window.appState = { ...window.appState, ...newState };
+render();
+}
+
+
+function getIcon(name) {
+try {
+const icons = {
+'chevron-right': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"></polyline></svg>',
+'home': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9,22 9,12 15,12 15,22"></polyline></svg>',
+'search': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>',
+'menu': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>',
+'x': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>',
+'shopping-bag': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>',
+'star': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon></svg>',
+'map-pin': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>',
+'phone': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>',
+'mail': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>',
+'facebook': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>',
+'twitter': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>',
+'linkedin': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>',
+'instagram': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>',
+'arrow-right': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>',
+'trending-up': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"></polyline><polyline points="16,7 22,7 22,13"></polyline></svg>',
+'package': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27,6.96 12,12.01 20.73,6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>',
+'shield': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
+'filter': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"></polygon></svg>',
+'chevron-down': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>',
+'chevron-up': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18,15 12,9 6,15"></polyline></svg>',
+'layout-grid': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+'list': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>',
+'clock': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12,6 12,12 16,14"></polyline></svg>',
+'phone-call': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>',
+'calendar': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
+'external-link': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15,3 21,3 21,9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>',
+'grid': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+'list-filter': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>'
+};
+return icons[name] || '';
+} catch (error) {
+console.error('Error in getIcon:', error);
+return '';
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Data
+const categories = [
+{
+id: 'thermal-transfer-printers',
+name: 'Thermal Transfer Printers',
+image: 'https://5.imimg.com/data5/RM/MN/MY-31613990/tsc-te200-500x500.png',
+description: 'High-quality thermal transfer printers for professional label printing and barcode solutions'
+}
+];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Products from CSV file
+const products = [
+  {
+    id: 1,
+    name: "TSC TE200 Barcode Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'prezotech',
+    price: 0,
+    images: ["https://5.imimg.com/data5/RM/MN/MY-31613990/tsc-te200-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "8 dots/mm (203 DPI)" },
+      { name: "Max Print Speed", value: "152.4 mm (6\")/second" },
+      { name: "Max Print Width", value: "108 mm (4.25\")" },
+      { name: "Max Print Length", value: "2,794 mm (110\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.8\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 38 mm (1\" ~ 1.5\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "8 MB Flash, 16 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZD" },
+      { name: "Interfaces", value: "USB 2.0, Internal Bluetooth 4.0" }
+    ]
+  },
+  {
+    id: 2,
+    name: "TSC TE210 Barcode Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'latest_labeling',
+    price: 50000,
+    images: ["https://5.imimg.com/data5/RM/MN/MY-31613990/tsc-te200-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "12 dots/mm (300 DPI)" },
+      { name: "Max Print Speed", value: "127 mm (5\")/second" },
+      { name: "Max Print Width", value: "105.7 mm (4.16\")" },
+      { name: "Max Print Length", value: "25,400 mm (1000\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.8\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 38 mm (1\" ~ 1.5\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "128 MB Flash, 64 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZD" },
+      { name: "Interfaces", value: "USB 2.0, Internal Bluetooth 4.0, Ethernet, RS232, External Bluetooth" }
+    ]
+  },
+  {
+    id: 3,
+    name: "TSC TE300 Barcode Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'falcon_exim',
+    price: 0,
+    images: ["https://5.imimg.com/data5/RH/MY/MY-31613990/tsc_te200-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "8 dots/mm (203 DPI)" },
+      { name: "Max Print Speed", value: "152.4 mm (6\")/second" },
+      { name: "Max Print Width", value: "108 mm (4.25\")" },
+      { name: "Max Print Length", value: "1,016 mm (40\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.8\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 38 mm (1\" ~ 1.5\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "8 MB Flash, 16 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZD" },
+      { name: "Interfaces", value: "USB 2.0, Internal Bluetooth 4.0" }
+    ]
+  },
+  {
+    id: 4,
+    name: "TSC TE310 Barcode Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'yash_agencies',
+    price: 21830,
+    images: ["https://5.imimg.com/data5/RH/MY/MY-31613990/tsc_te200-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "12 dots/mm (300 DPI)" },
+      { name: "Max Print Speed", value: "127 mm (5\")/second" },
+      { name: "Max Print Width", value: "105.7 mm (4.16\")" },
+      { name: "Max Print Length", value: "11,430 mm (450\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.8\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 38 mm (1\" ~ 1.5\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "128 MB Flash, 64 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZD" },
+      { name: "Interfaces", value: "USB 2.0, Internal Bluetooth 4.0, Ethernet, RS232, External Bluetooth" }
+    ]
+  },
+  {
+    id: 5,
+    name: "BSA4TM Mid-Range Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'inspired_tech',
+    price: 0,
+    images: ["https://5.imimg.com/data5/KR/XD/GF/SELLER-28792251/toshiba-industrial-barcode-priner-500x500.jpeg"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi (8 dots/mm)" },
+      { name: "Max Print Speed", value: "152.4 mm/second (6 ips)" },
+      { name: "Max Print Width", value: "104 mm" },
+      { name: "Max Print Length", value: "987 mm" },
+      { name: "Media Type", value: "Roll, Fanfold" },
+      { name: "Media Width", value: "25-114 mm" },
+      { name: "Media Thickness", value: "0.008-0.17 mm" },
+      { name: "Media Core Diameter", value: "38, 40, 42, 76.2 mm" },
+      { name: "Ribbon Width", value: "60-100 mm" },
+      { name: "Max Ribbon Length", value: "450 m" },
+      { name: "Printer Language", value: "TPCL, BCI" },
+      { name: "Interfaces", value: "Parallel port, USB 2.0, LAN( 10/100Base), Serial port1),Expansion I/O1)" }
+    ]
+  },
+  {
+    id: 6,
+    name: "BSA4TM Mid-Range Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'allmark_device',
+    price: 37170,
+    images: ["https://5.imimg.com/data5/KR/XD/GF/SELLER-28792251/toshiba-industrial-barcode-priner-500x500.jpeg"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi (11.8 dots/mm)" },
+      { name: "Max Print Speed", value: "152.4 mm/second (6 ips)" },
+      { name: "Max Print Width", value: "105.7 mm" },
+      { name: "Max Print Length", value: "987 mm" },
+      { name: "Media Type", value: "Roll, Fanfold" },
+      { name: "Media Width", value: "25-114 mm" },
+      { name: "Media Thickness", value: "0.008-0.17 mm" },
+      { name: "Media Core Diameter", value: "38, 40, 42, 76.2 mm" },
+      { name: "Ribbon Width", value: "60-100 mm" },
+      { name: "Max Ribbon Length", value: "450 m" },
+      { name: "Printer Language", value: "TPCL, BCI" },
+      { name: "Interfaces", value: "Parallel port, USB 2.0, LAN( 10/100Base), Serial port1),Expansion I/O1)" }
+    ]
+  },
+  {
+    id: 7,
+    name: "BSA4TP Mid-Range Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'radical_global',
+    price: 0,
+    images: ["https://5.imimg.com/data5/HM/MT/MY-696432/toshiba-barcode-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi (8 dots/mm)" },
+      { name: "Max Print Speed", value: "152.4 mm/second (6 ips)" },
+      { name: "Max Print Width", value: "104 mm" },
+      { name: "Max Print Length", value: "987 mm" },
+      { name: "Media Type", value: "Roll, Fanfold" },
+      { name: "Media Width", value: "25-114 mm" },
+      { name: "Media Thickness", value: "0.008-0.17 mm" },
+      { name: "Media Core Diameter", value: "38, 40, 42, 76.2 mm" },
+      { name: "Ribbon Width", value: "60-100 mm" },
+      { name: "Max Ribbon Length", value: "450 m" },
+      { name: "Printer Language", value: "TPCL, BCI" },
+      { name: "Interfaces", value: "Parallel port, USB 2.0, LAN( 10/100Base), Serial port1),Expansion I/O1)" }
+    ]
+  },
+  {
+    id: 8,
+    name: "BSA4TP Mid-Range Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'encstore',
+    price: 0,
+    images: ["https://5.imimg.com/data5/HM/MT/MY-696432/toshiba-barcode-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi (12 dots/mm)" },
+      { name: "Max Print Speed", value: "152.4 mm/second (6 ips)" },
+      { name: "Max Print Width", value: "105.7 mm" },
+      { name: "Max Print Length", value: "987 mm" },
+      { name: "Media Type", value: "Roll, Fanfold" },
+      { name: "Media Width", value: "25-114 mm" },
+      { name: "Media Thickness", value: "0.008-0.17 mm" },
+      { name: "Media Core Diameter", value: "38, 40, 42, 76.2 mm" },
+      { name: "Ribbon Width", value: "60-100 mm" },
+      { name: "Max Ribbon Length", value: "450 m" },
+      { name: "Printer Language", value: "TPCL, BCI" },
+      { name: "Interfaces", value: "Parallel port, USB 2.0, LAN( 10/100Base), Serial port1),Expansion I/O1)" }
+    ]
+  },
+  {
+    id: 9,
+    name: "TTP 244 PRO Desktop Thermal Transfer Bar Code Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'bd_group',
+    price: 14160,
+    images: ["https://5.imimg.com/data5/RB/XN/JK/SELLER-28792251/tsc-ttp-244-pro-500x500.jpg"],
+    specifications: [
+      { name: "Resolution", value: "8 dots/mm (203 DPI)" },
+      { name: "Max Print Speed", value: "127 mm (5\")/second" },
+      { name: "Max Print Width", value: "108 mm (4.25\")" },
+      { name: "Max Print Length", value: "2,286 mm (90\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "25.4 ~ 112 mm (1.0\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 76.2 mm (1\" ~ 3\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "4 MB Flash, 8 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZTM (Compatible to EPL, ZPL, ZPL II)" },
+      { name: "Interfaces", value: "USB 2.0, RS-232, Centronics (factory option), Bluethooth (user option)" }
+    ]
+  },
+  {
+    id: 10,
+    name: "G500U Desktop Printers",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'cavalier',
+    price: 48000,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2025/5/508406213/UC/VO/OP/28792109/gp-500-barcode-printer-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "203 DPI (8 dot/mm)" },
+      { name: "Max Print Speed", value: "5 IPS (127 mm/s)" },
+      { name: "Max Print Width", value: "4.25\" (108 mm)" },
+      { name: "Max Print Length", value: "68\" (1727 mm)" },
+      { name: "Media Type", value: "Continuous form, gap labels, black mark sensing, and punched hole; label length set by auto sensing or programming" },
+      { name: "Media Width", value: "1\" ~ 4.64\" (25.4 ~ 118 mm)" },
+      { name: "Media Thickness", value: "0.0024\" ~ 0.01\" (0.06 ~ 0.25 mm)" },
+      { name: "Media Core Diameter", value: "1\" (25.4 mm), 1.5\" (38.1mm), 3\" (76.2mm)" },
+      { name: "Ribbon Width", value: "1.18\" ~ 4.33\" (30 mm - 110 mm)" },
+      { name: "Max Ribbon Length", value: "981\" (300 m)" },
+      { name: "Memory", value: "8 MB Flash, 16 MB SDRAM" },
+      { name: "Printer Language", value: "EZPL, GEPL, GZPL, GDPL auto switch" },
+      { name: "Interfaces", value: "USB 2.0" }
+    ]
+  },
+  {
+    id: 11,
+    name: "G500UES Desktop Printers",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'prezotech',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2025/5/508406213/UC/VO/OP/28792109/gp-500-barcode-printer-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "203 DPI (8 dot/mm)" },
+      { name: "Max Print Speed", value: "5 IPS (127 mm/s)" },
+      { name: "Max Print Width", value: "4.25\" (108 mm)" },
+      { name: "Max Print Length", value: "68\" (1727 mm)" },
+      { name: "Media Type", value: "Continuous form, gap labels, black mark sensing, and punched hole; label length set by auto sensing or programming" },
+      { name: "Media Width", value: "1\" ~ 4.64\" (25.4 ~ 118 mm)" },
+      { name: "Media Thickness", value: "0.0024\" ~ 0.01\" (0.06 ~ 0.25 mm)" },
+      { name: "Media Core Diameter", value: "1\" (25.4 mm), 1.5\" (38.1mm), 3\" (76.2mm)" },
+      { name: "Ribbon Width", value: "1.18\" ~ 4.33\" (30 mm - 110 mm)" },
+      { name: "Max Ribbon Length", value: "981\" (300 m)" },
+      { name: "Memory", value: "8 MB Flash, 16 MB SDRAM" },
+      { name: "Printer Language", value: "EZPL, GEPL, GZPL, GDPL auto switch" },
+      { name: "Interfaces", value: "USB 2.0, RS232, IEEE 802.3 10/100 Base-Tx, Ethernet Port" }
+    ]
+  },
+  {
+    id: 12,
+    name: "Citizen CL E321 Barcode Label Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'latest_labeling',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2022/7/DC/PI/UM/71337741/citizen-cl-e321-barcode-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi" },
+      { name: "Max Print Speed", value: "8 IPS (200 mm/s)" },
+      { name: "Max Print Width", value: "4 inches (104 mm)" },
+      { name: "Media Width", value: "1 - 4.6 inches (25 - 118 mm)" },
+      { name: "Media Thickness", value: "63.5 to 190 μm" },
+      { name: "Ribbon Width", value: "2.6 inches (60 mm)" },
+      { name: "Max Ribbon Length", value: "300 metres" },
+      { name: "Memory", value: "16 MB Flash, 32 MB SDRAM" },
+      { name: "Printer Language", value: "DMX, ZPL2, EPL2, CBI – auto switch" },
+      { name: "Interfaces", value: "Triple interface USB 2.0, RS-232 and 10/100 Ethernet" }
+    ]
+  },
+  {
+    id: 13,
+    name: "Epson TM-83III Thermal Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'falcon_exim',
+    price: 9000,
+    images: ["https://mediaserver.goepson.com/ImConvServlet/imconv/99ab6d5c651d37b503182a17eaec41eedd6320e9/1200Wx1200H?use=banner&hybrisId=B2C&assetDescr=FY18_SIL_Left_Paper_EBCK"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi" },
+      { name: "Max Print Speed", value: "200mm/s" },
+      { name: "Interfaces", value: "Built-in USB + Serial (9pin) / Ethernet Interface" }
+    ]
+  },
+  {
+    id: 14,
+    name: "G530 Desktop Printers",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'yash_agencies',
+    price: 0,
+    images: ["https://5.imimg.com/data5/QX/SS/JQ/SELLER-8307220/godex-g530-barcode-label-printer-500x500.jpg"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi (12 dots/mm)" },
+      { name: "Max Print Speed", value: "4 IPS (102 mm/s)" },
+      { name: "Max Print Width", value: "4.16\" (105.7 mm)" },
+      { name: "Max Print Length", value: "30\" (762 mm)" },
+      { name: "Media Type", value: "Continuous form, gap labels, black mark sensing, and punched hole; label length set by auto sensing or programming" },
+      { name: "Media Width", value: "1\" ~ 4.64\" (25.4 ~ 118 mm)" },
+      { name: "Media Thickness", value: "0.0024\" ~ 0.01\" (0.06 ~ 0.25 mm)" },
+      { name: "Media Core Diameter", value: "1\" (25.4 mm), 1.5\" (38.1mm), 3\" (76.2mm)" },
+      { name: "Ribbon Width", value: "1.18\" ~ 4.33\" (30 mm - 110 mm)" },
+      { name: "Max Ribbon Length", value: "981\" (300 m)" },
+      { name: "Memory", value: "8 MB Flash, 16 MB SDRAM" },
+      { name: "Printer Language", value: "EZPL, GEPL, GZPL, GDPL auto switch" },
+      { name: "Interfaces", value: "USB 2.0" }
+    ]
+  },
+  {
+    id: 15,
+    name: "Honeywell IH-2 DESKTOP LABEL PRINTER",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'inspired_tech',
+    price: 13393,
+    images: ["https://www.srkinnovations.com/cdn/shop/files/IH21_540x.jpg?v=1690974114"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi (8 dots/mm)" },
+      { name: "Max Print Speed", value: "127 mm/s (5 inch/s)" },
+      { name: "Max Print Width", value: "108 mm Max: 15-200mm" },
+      { name: "Media Type", value: "Roll-Fed Or Fan-Fed, Die-Cut Or Continuous Label. Tag Stock, Continuous Receipt Paper" },
+      { name: "Media Width", value: "0.79\"(20mm)-4 65' (118mm)" },
+      { name: "Media Thickness", value: "0.003 (80um)-0007\" (180um)" },
+      { name: "Media Core Diameter", value: "1'(25.4mm), 15' (38mm), 3' (76.2 mm)" },
+      { name: "Ribbon Width", value: "1.33 (33.8mm)- 4.33\" (110mm)" },
+      { name: "Max Ribbon Length", value: "984' (300 m)" },
+      { name: "Memory", value: "16 MB Flash, 32 MB RAM" },
+      { name: "Printer Language", value: "TSPL, ZPL" },
+      { name: "Interfaces", value: "USB, RS232, Ethernet" }
+    ]
+  },
+  {
+    id: 16,
+    name: "PC42T PLUS Desktop Printers",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'allmark_device',
+    price: 0,
+    images: ["https://www.encstore.com/assets/products/1738582610-pc42t-desktop-barcode-printer.webp"],
+    specifications: [
+      { name: "Resolution", value: "8.0 dpmm (203 dpi)" },
+      { name: "Max Print Speed", value: "125 mm/s (5.0 ips)" },
+      { name: "Max Print Width", value: "104.1 mm (4.1 in)" },
+      { name: "Media Width", value: "25.4 mm – 110 mm (1.0 in – 4.3 in)" },
+      { name: "Media Core Diameter", value: "25.4 mm (1 in), 38.1 mm (1.5 in)" },
+      { name: "Ribbon Width", value: "30 mm – 110 mm (1.2 in – 4.3 in)" },
+      { name: "Max Ribbon Length", value: "75 m (246 ft)" },
+      { name: "Memory", value: "64 MB Flash, 64 MB SDRAM" },
+      { name: "Printer Language", value: "(DP), DPL, ZSim2 (ZPL II), ESim (EPL)" },
+      { name: "Interfaces", value: "USB Device, USB Host" }
+    ]
+  },
+  {
+    id: 17,
+    name: "LABEL PRINTER Endura 2461",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'radical_global',
+    price: 20700,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2025/5/512454476/OO/SA/CC/200940671/kores-endura-2461-barcode-printer-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi" },
+      { name: "Max Print Speed", value: "8 ips" },
+      { name: "Max Print Width", value: "108 mm" },
+      { name: "Max Print Length", value: "2286 mm" },
+      { name: "Media Width", value: "25.4 mm ~ 118 mm" },
+      { name: "Media Thickness", value: "60μm ~ 250 μm" },
+      { name: "Ribbon Width", value: "30 mm ~ 110 mm" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "RAM 128 MB Flash 256 MB" },
+      { name: "Printer Language", value: "DPL, ZPL II, EPL2" },
+      { name: "Interfaces", value: "USB Type B, RS232, Ethernet" }
+    ]
+  },
+  {
+    id: 18,
+    name: "LABEL PRINTER Endura 2461",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'encstore',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2025/5/512454476/OO/SA/CC/200940671/kores-endura-2461-barcode-printer-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi" },
+      { name: "Max Print Speed", value: "6 ips" },
+      { name: "Max Print Width", value: "106 mm" },
+      { name: "Max Print Length", value: "1524 mm" },
+      { name: "Media Width", value: "25.4 mm ~ 118 mm" },
+      { name: "Media Thickness", value: "60μm ~ 250 μm" },
+      { name: "Ribbon Width", value: "30 mm ~ 110 mm" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "RAM 128 MB Flash 256 MB" },
+      { name: "Printer Language", value: "DPL, ZPL II, EPL2" },
+      { name: "Interfaces", value: "USB Type B, RS232, Ethernet" }
+    ]
+  },
+  {
+    id: 19,
+    name: "LINX TT 500 PRINTER",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'bd_group',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2023/5/304781843/EN/YH/DX/51498547/linx-tt500-thermal-transfer-over-printer-tto-printer--500x500.jpg"],
+    specifications: [
+      { name: "Resolution", value: "200dpi, 8 dots/mm" },
+      { name: "Ribbon Width", value: "20mm - 33mm" },
+      { name: "Max Ribbon Length", value: "700m" }
+    ]
+  },
+  {
+    id: 20,
+    name: "LP-46 Lite Desktop BarCode Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'cavalier',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2020/9/EH/PV/NY/18334123/tvs-lp46-barcode-printer-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "8 dots/mm (203 dpi)" },
+      { name: "Max Print Speed", value: "152.4 mm (6\")/second" },
+      { name: "Max Print Width", value: "108 mm (4.25\")" },
+      { name: "Max Print Length", value: "2,794 mm (110\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.8\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 38 mm (1\" ~ 1.5\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "8 MB Flash, 16 MB SDRAM" }
+    ]
+  },
+  {
+    id: 21,
+    name: "RP-326 Reliable Thermal Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'prezotech',
+    price: 8500,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2025/5/507930008/MS/IA/NX/200940671/rugtek-rp326-use-thermal-printer-500x500.jpg"],
+    specifications: [
+      { name: "Resolution", value: "203dpi" },
+      { name: "Max Print Speed", value: "250mm/s" },
+      { name: "Max Print Width", value: "72mm or 48mm" },
+      { name: "Interfaces", value: "USB, Serial, Ethernet" }
+    ]
+  },
+  {
+    id: 22,
+    name: "TSC Label Printer TTP-247",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'latest_labeling',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2024/5/417766386/LG/YF/NO/348386/tsc-label-printer-ttp-247-500x500.jpg"],
+    specifications: [
+      { name: "Resolution", value: "8 dots/mm (203 DPI)" },
+      { name: "Max Print Speed", value: "178 mm (7\")/second" },
+      { name: "Max Print Width", value: "108 mm (4.25\")" },
+      { name: "Max Print Length", value: "2,286 mm (90\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.78\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 76.2 mm (1\" ~ 3\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "4 MB Flash 8 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZTM" },
+      { name: "Interfaces", value: "USB 2.0, RS-232, Centronics, Internal Ethernet, 10/100 Mbps (factory option), Bluethooth (user option)" }
+    ]
+  },
+  {
+    id: 23,
+    name: "Tsc Ttp 345 Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'falcon_exim',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2024/1/378198389/AT/WY/AV/348386/tsc-ttp-345-printer-500x500.jpg"],
+    specifications: [
+      { name: "Resolution", value: "12 dots/mm (300 DPI)" },
+      { name: "Max Print Speed", value: "127 mm (5\")/second" },
+      { name: "Max Print Width", value: "106 mm (4.17\")" },
+      { name: "Max Print Length", value: "1,016 mm (40\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.78\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 76.2 mm (1\" ~ 3\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "4 MB Flash 8 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZTM" },
+      { name: "Interfaces", value: "USB 2.0, RS-232, Centronics, Internal Ethernet, 10/100 Mbps (factory option), Bluethooth (user option)" }
+    ]
+  },
+  {
+    id: 24,
+    name: "TE244 Desktop Thermal Transfer Bar Code Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'yash_agencies',
+    price: 11500,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2022/3/LU/TW/FC/29083344/barcode-label-printer-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "8 dots/mm (203 DPI)" },
+      { name: "Max Print Speed", value: "152.4 mm (6\")/second" },
+      { name: "Max Print Width", value: "108 mm (4.25\")" },
+      { name: "Max Print Length", value: "2,794 mm (110\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.8\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 38 mm (1\" ~ 1.5\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "8 MB Flash 16 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZTM (Compatible to EPL, ZPL, ZPL II)" },
+      { name: "Interfaces", value: "USB 2.0, Internal Bluetooth 4.0 (factory option)" }
+    ]
+  },
+  {
+    id: 25,
+    name: "TE 344 Desktop Thermal Transfer Bar Code Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'inspired_tech',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2022/3/LU/TW/FC/29083344/barcode-label-printer-500x500.png"],
+    specifications: [
+      { name: "Resolution", value: "12 dots/mm (300 DPI)" },
+      { name: "Max Print Speed", value: "127 mm (5\")/second" },
+      { name: "Max Print Width", value: "105.6 mm (4.16\")" },
+      { name: "Max Print Length", value: "1,016 mm (40\")" },
+      { name: "Media Type", value: "Continuous, die-cut, black mark, fan-fold, notched (outside wound)" },
+      { name: "Media Width", value: "20 ~ 112 mm (0.8\" ~ 4.4\")" },
+      { name: "Media Thickness", value: "0.06 ~ 0.19 mm (2.36 ~ 7.48 mil)" },
+      { name: "Media Core Diameter", value: "25.4 ~ 38 mm (1\" ~ 1.5\")" },
+      { name: "Ribbon Width", value: "40 mm ~ 110 mm (1.6\" ~ 4.3\")" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "8 MB Flash 16 MB SDRAM" },
+      { name: "Printer Language", value: "TSPL-EZTM (Compatible to EPL, ZPL, ZPL II)" },
+      { name: "Interfaces", value: "USB 2.0, Internal Bluetooth 4.0 (factory option)" }
+    ]
+  },
+  {
+    id: 26,
+    name: "ZD220 Desktop Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'allmark_device',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2021/5/EN/CC/BI/53826591/zebra-zd220-barcode-printer-1000x1000.png"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi/8 dots per mm" },
+      { name: "Max Print Speed", value: "4 in./102 mm per second" },
+      { name: "Max Print Width", value: "4.09 in./104 mm" },
+      { name: "Media Type", value: "Roll-fed or fan-fold, die cut or continuous with or without black mark, tag stock, continuous receipt paper, and wristbands" },
+      { name: "Media Width", value: "1.00 in. / 25.4 mm to 4.4 in. / 112 mm" },
+      { name: "Max Ribbon Length", value: "244 ft. (74 m)" },
+      { name: "Memory", value: "256 MB Flash; 128 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL and EPL" }
+    ]
+  },
+  {
+    id: 27,
+    name: "Zebra ZD230TA Thermal Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'radical_global',
+    price: 10200,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2024/8/444409888/AE/IV/VV/21786359/zebra-barcode-label-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi (8 dots/mm)" },
+      { name: "Max Print Speed", value: "6 ips (152mm" },
+      { name: "Max Print Width", value: "104mm" },
+      { name: "Max Print Length", value: "990mm" },
+      { name: "Media Type", value: "Roll-fed or fan-fold  Label stock (die cut or continuous, direct thermal or thermal transfer) Tag stock (die cut or continuous, direct thermal or thermal transfer) Receipt paper (continuous, direct thermal) Wristband stock (direct thermal or thermal transfer) (Z-Band 4000)" },
+      { name: "Media Width", value: "25.4mm - 112mm" },
+      { name: "Media Thickness", value: "0.06mm min- 0.1905mm" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "8 MB Flash  16 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL II , EPL2" },
+      { name: "Interfaces", value: "USB 2.0" }
+    ]
+  },
+  {
+    id: 28,
+    name: "Zebra ZD230TA Thermal Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'encstore',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2024/8/444409888/AE/IV/VV/21786359/zebra-barcode-label-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi (12 dots/mm)" },
+      { name: "Max Print Width", value: "106mm" },
+      { name: "Max Print Length", value: "990mm" },
+      { name: "Media Type", value: "Roll-fed or fan-fold  Label stock (die cut or continuous, direct thermal or thermal transfer) Tag stock (die cut or continuous, direct thermal or thermal transfer) Receipt paper (continuous, direct thermal) Wristband stock (direct thermal or thermal transfer) (Z-Band 4000)" },
+      { name: "Media Width", value: "25.4mm - 112mm" },
+      { name: "Media Thickness", value: "0.06mm min- 0.1905mm" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "8 MB Flash  16 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL II , EPL2" },
+      { name: "Interfaces", value: "USB 2.0" }
+    ]
+  },
+  {
+    id: 29,
+    name: "Zebra ZD420 Desktop Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'bd_group',
+    price: 0,
+    images: ["https://5.imimg.com/data5/RU/XZ/ZI/SELLER-31613990/zebra-zd420-300dpi-barcode-label-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi/8 dots" },
+      { name: "Max Print Speed", value: "6 in./152 mm per second" },
+      { name: "Max Print Width", value: "4.09 in./104 mm" },
+      { name: "Media Type", value: "Roll-fed or fan-fold, die cut or continuous with or without black mark, tag stock, continuous receipt paper, and wristbands" },
+      { name: "Media Width", value: "0.585 in./15 mm" },
+      { name: "Media Thickness", value: "0.003 in. (0.08 mm)" },
+      { name: "Ribbon Width", value: "1.33 in./33.8 mm – 4.3 in./109.2 mm" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "512 MB Flash, 256 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL, EPL" },
+      { name: "Interfaces", value: "USB 2.0, USB Host" }
+    ]
+  },
+  {
+    id: 30,
+    name: "Zebra ZD420 Desktop Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'cavalier',
+    price: 0,
+    images: ["https://5.imimg.com/data5/RU/XZ/ZI/SELLER-31613990/zebra-zd420-300dpi-barcode-label-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi/12 dots/ mm" },
+      { name: "Max Print Speed", value: "4 in./102 mm per second" },
+      { name: "Max Print Width", value: "4.27 in./108 mm" },
+      { name: "Media Width", value: "4.65 in./118 mm" },
+      { name: "Media Thickness", value: "0.0075 in. (0.1905mm)" },
+      { name: "Ribbon Width", value: "1.33 in./33.8 mm – 4.3 in./109.2 mm" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "512 MB Flash, 128 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL, EPL" },
+      { name: "Interfaces", value: "USB 2.0, USB Host" }
+    ]
+  },
+  {
+    id: 31,
+    name: "Zebra ZD421 Desktop Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'prezotech',
+    price: 51212,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2022/1/HD/DR/BT/69026389/zebra-zd421-barcode-label-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi/8 dots/mm" },
+      { name: "Max Print Speed", value: "6 in./152 mm per second" },
+      { name: "Max Print Width", value: "4.09 in./104 mm" },
+      { name: "Media Type", value: "Roll" },
+      { name: "Media Width", value: "0.585 in./15 mm to 4.41 in./112 mm" },
+      { name: "Media Thickness", value: "0.003 in. (0.08 mm) - 0.0075 in. (0.19 mm)" },
+      { name: "Ribbon Width", value: "1.33 in./33.8 mm–4.3 in./109.2 mm" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "512 MB Flash, 256 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL II, EPL 2, XML, ZBI, PDF Direct" },
+      { name: "Interfaces", value: "USB 2.0, USB Host" }
+    ]
+  },
+  {
+    id: 32,
+    name: "Zebra ZD421 Desktop Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'latest_labeling',
+    price: 51212,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2022/1/HD/DR/BT/69026389/zebra-zd421-barcode-label-printer-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi/12 dots per mm" },
+      { name: "Max Print Speed", value: "4 in./102 mm per second" },
+      { name: "Max Print Width", value: "4.16 in./106 mm" },
+      { name: "Media Type", value: "Roll" },
+      { name: "Media Width", value: "0.585 in./15 mm to 4.41 in./112 mm" },
+      { name: "Media Thickness", value: "0.003 in. (0.08 mm) - 0.0075 in. (0.19 mm)" },
+      { name: "Ribbon Width", value: "1.33 in./33.8 mm–4.3 in./109.2 mm" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Memory", value: "512 MB Flash, 256 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL II, EPL 2, XML, ZBI, PDF Direct" },
+      { name: "Interfaces", value: "USB 2.0, USB Host" }
+    ]
+  },
+  {
+    id: 33,
+    name: "Zebra ZD411 Desktop Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'falcon_exim',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2024/8/440859511/SK/KK/UA/41397160/zebra-zd411-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "203 dpi/8 dots/mm" },
+      { name: "Max Print Speed", value: "6 in./152 mm per second" },
+      { name: "Max Print Width", value: "2.2 in./56 mm" },
+      { name: "Media Type", value: "Roll-fed or fan-fold, die cut or continuous with or without black mark, tag stock, continuous receipt paper, and wristbands" },
+      { name: "Media Width", value: "0.585 in./15 mm to 2.36 in./60 mm" },
+      { name: "Media Thickness", value: "0.0024 in./0.06 mm min - 0.0075 in./0.1905 mm" },
+      { name: "Ribbon Width", value: "1.3 in./33 mm–2.24 in./58 mm" },
+      { name: "Max Ribbon Length", value: "243 ft./74 m" },
+      { name: "Memory", value: "512 MB Flash, 256 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL II, EPL 2, XML, ZBI, PDF Direct" },
+      { name: "Interfaces", value: "USB 2.0, USB Host" }
+    ]
+  },
+  {
+    id: 34,
+    name: "Zebra ZD411 Desktop Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'yash_agencies',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2024/8/440859511/SK/KK/UA/41397160/zebra-zd411-1000x1000.jpg"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi/12 dots per mm" },
+      { name: "Max Print Speed", value: "4 in./102 mm per second" },
+      { name: "Max Print Width", value: "2.13 in./54 mm" },
+      { name: "Media Type", value: "Roll-fed or fan-fold, die cut or continuous with or without black mark, tag stock, continuous receipt paper, and wristbands" },
+      { name: "Media Width", value: "0.585 in./15 mm to 2.36 in./60 mm" },
+      { name: "Media Thickness", value: "0.0024 in./0.06 mm min - 0.0075 in./0.1905 mm" },
+      { name: "Ribbon Width", value: "1.3 in./33 mm–2.24 in./58 mm" },
+      { name: "Max Ribbon Length", value: "243 ft./74 m" },
+      { name: "Memory", value: "512 MB Flash, 256 MB SDRAM" },
+      { name: "Printer Language", value: "ZPL II, EPL 2, XML, ZBI, PDF Direct" },
+      { name: "Interfaces", value: "USB 2.0, USB Host" }
+    ]
+  },
+  {
+    id: 35,
+    name: "IJT 35S Thermal Transfer Over Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'inspired_tech',
+    price: 0,
+    images: ["http://5.imimg.com/data5/SELLER/PDFImage/2024/6/427998371/CA/ZM/XU/3477927/automatic-batch-coding-machine.png"],
+    specifications: [
+      { name: "Resolution", value: "300 dpi (12 dots/mm)" },
+      { name: "Ribbon Width", value: "22mm, 35mm (0.9''- 1.4'')" },
+      { name: "Max Ribbon Length", value: "600 meters" },
+      { name: "Memory", value: "8 MB Ram, 2 MB Flash" },
+      { name: "Interfaces", value: "USB, Ethernet, RS232" }
+    ]
+  },
+  {
+    id: 36,
+    name: "D02 Thermal Transfer printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'allmark_device',
+    price: 0,
+    images: ["http://5.imimg.com/data5/SELLER/Default/2023/6/320545253/LV/FX/HP/4764203/tto-printer.jpg"],
+    specifications: [
+      { name: "Resolution", value: "200 DPI" },
+      { name: "Max Ribbon Length", value: "500m" }
+    ]
+  },
+  {
+    id: 37,
+    name: "SVM 3240 Thermal Transfer Overprinter",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'radical_global',
+    price: 0,
+    images: ["http://5.imimg.com/data5/SELLER/Default/2024/4/407567131/TH/OT/XK/20913549/thermal-transfer-overprinters-svm-3240-svm-5340.jpeg"],
+    specifications: [
+      { name: "Resolution", value: "12 dots/mm (300 dpi)" },
+      { name: "Max Print Speed", value: "300 mm/sec" },
+      { name: "Ribbon Width", value: "22 mm, 35 mm, 55 mm (0.9'' - 1.4''-2.2'')" },
+      { name: "Max Ribbon Length", value: "600 m" },
+      { name: "Memory", value: "512?MB RAM, 1 GB Flash" },
+      { name: "Interfaces", value: "RS-232(PC), LAN(Ethernet), USB" }
+    ]
+  },
+  {
+    id: 38,
+    name: "SVM 5340 Thermal Transfer Overprinter",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'encstore',
+    price: 0,
+    images: ["http://5.imimg.com/data5/SELLER/Default/2024/4/407567131/TH/OT/XK/20913549/thermal-transfer-overprinters-svm-3240-svm-5340.jpeg"],
+    specifications: [
+      { name: "Resolution", value: "12 dots/mm (300 dpi)" },
+      { name: "Max Print Speed", value: "300 mm/sec" },
+      { name: "Ribbon Width", value: "22 mm, 35 mm, 55 mm (0.9'' - 1.4''-2.2'')" },
+      { name: "Max Ribbon Length", value: "600 m" },
+      { name: "Memory", value: "512?MB RAM, 1 GB Flash" },
+      { name: "Interfaces", value: "RS-232(PC), LAN(Ethernet), USB" }
+    ]
+  },
+  {
+    id: 39,
+    name: "XP TT426B Thermal Transfer Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'bd_group',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2021/9/YY/LQ/OC/51498547/screenshot-2021-09-22-at-5-29-51-pm.png"],
+    specifications: [
+      { name: "Max Print Speed", value: "127 mm/sec" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Printer Language", value: "TSPL - EZ" }
+    ]
+  },
+  {
+    id: 40,
+    name: "XP TT437 Thermal Transfer Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'cavalier',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2021/9/YY/LQ/OC/51498547/screenshot-2021-09-22-at-5-29-51-pm.png"],
+    specifications: [
+      { name: "Max Print Speed", value: "127 mm/sec" },
+      { name: "Max Ribbon Length", value: "300 m" },
+      { name: "Printer Language", value: "TSPL - EZ" }
+    ]
+  },
+  {
+    id: 41,
+    name: "HPRT HT800 Thermal Transfer Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'prezotech',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2024/9/449615963/JL/AB/TO/119759268/hprt-ht800-thermal-transfer-printer.jpg"],
+    specifications: [
+      { name: "Resolution", value: "203 DPI" },
+      { name: "Max Print Speed", value: "6 IPS" }
+    ]
+  },
+  {
+    id: 42,
+    name: "HPRT HT830 Thermal Transfer Printer",
+    categoryId: 'thermal-transfer-printers',
+    sellerId: 'latest_labeling',
+    price: 0,
+    images: ["https://5.imimg.com/data5/SELLER/Default/2024/9/449615963/JL/AB/TO/119759268/hprt-ht800-thermal-transfer-printer.jpg"],
+    specifications: [
+      { name: "Resolution", value: "300 DPI" },
+      { name: "Max Print Speed", value: "4 IPS" }
+    ]
+  }
+];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Sellers from CSV file
+const sellers = [
+{
+id: 'prezotech',
+name: 'Prezotech Solutions Private Limited',
+location: 'New Delhi, Delhi',
+rating: 4.7,
+memberSince: '2019',
+responseRate: 96,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543200',
+email: 'info@prezotech.com',
+address: 'Industrial Area, New Delhi, Delhi',
+description: 'Leading provider of barcode and label printing solutions.'
+},
+{
+id: 'latest_labeling',
+name: 'Latest Labeling And Solutions',
+location: 'New Delhi, Delhi',
+rating: 4.6,
+memberSince: '2020',
+responseRate: 95,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543201',
+email: 'info@latestlabeling.com',
+address: 'Industrial Area, New Delhi, Delhi',
+description: 'Specialized in industrial barcode printing solutions.'
+},
+{
+id: 'falcon_exim',
+name: 'Falcon Exim Private Limited',
+location: 'Pune, Maharashtra',
+rating: 4.8,
+memberSince: '2018',
+responseRate: 97,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543202',
+email: 'info@falconexim.com',
+address: 'Industrial Area, Pune, Maharashtra',
+description: 'Premium supplier of thermal transfer printing solutions.'
+},
+{
+id: 'yash_agencies',
+name: 'Yash Agencies',
+location: 'Mumbai, Maharashtra',
+rating: 4.5,
+memberSince: '2020',
+responseRate: 94,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543203',
+email: 'info@yashagencies.com',
+address: 'Industrial Area, Mumbai, Maharashtra',
+description: 'Quality provider of barcode printing equipment.'
+},
+{
+id: 'inspired_tech',
+name: 'Inspired Technologies Private Limited',
+location: 'Lucknow, Uttar Pradesh',
+rating: 4.7,
+memberSince: '2019',
+responseRate: 96,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543204',
+email: 'info@inspiredtech.com',
+address: 'Industrial Area, Lucknow, Uttar Pradesh',
+description: 'Innovative thermal printer solutions provider.'
+},
+{
+id: 'allmark_device',
+name: 'Allmark Device Integrations Pvt Ltd',
+location: 'Chennai, Tamil Nadu',
+rating: 4.8,
+memberSince: '2018',
+responseRate: 97,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543205',
+email: 'info@allmarkdevice.com',
+address: 'Industrial Area, Chennai, Tamil Nadu',
+description: 'Complete barcode and label printing solutions.'
+},
+{
+id: 'radical_global',
+name: 'Radical Global',
+location: 'Nagpur, Maharashtra',
+rating: 4.6,
+memberSince: '2020',
+responseRate: 95,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543206',
+email: 'info@radicalglobal.com',
+address: 'Industrial Area, Nagpur, Maharashtra',
+description: 'Leading distributor of thermal transfer printers.'
+},
+{
+id: 'encstore',
+name: 'EnCstore.com Private Limited',
+location: 'Ghaziabad, Uttar Pradesh',
+rating: 4.7,
+memberSince: '2019',
+responseRate: 96,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543207',
+email: 'info@encstore.com',
+address: 'Industrial Area, Ghaziabad, Uttar Pradesh',
+description: 'Premium supplier of Zebra printing solutions.'
+},
+{
+id: 'bd_group',
+name: 'B D Group',
+location: 'Lucknow, Uttar Pradesh',
+rating: 4.5,
+memberSince: '2020',
+responseRate: 94,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543208',
+email: 'info@bdgroup.com',
+address: 'Industrial Area, Lucknow, Uttar Pradesh',
+description: 'Quality thermal printer equipment provider.'
+},
+{
+id: 'cavalier',
+name: 'Cavalier Enterprises',
+location: 'Mumbai, Maharashtra',
+rating: 4.8,
+memberSince: '2018',
+responseRate: 97,
+contactPerson: 'Sales Manager',
+phone: '+91 9876543209',
+email: 'info@cavalier.com',
+address: 'Industrial Area, Mumbai, Maharashtra',
+description: 'Specialized in thermal transfer printing solutions.'
+}
+];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Utility Functions
+function formatCurrency(amount, currency = 'INR') {
+if (amount === 0) return 'Price on request';
+return new Intl.NumberFormat('en-IN', {
+style: 'currency',
+currency: currency,
+maximumFractionDigits: 0
+}).format(amount);
+}
+function truncateText(text, length) {
+if (!text) return '';
+return text.length > length ? text.substring(0, length).trim() + '...' : text;
+}
+function getCategoryById(id, categories) {
+return categories.find(cat => cat.id === id);
+}
+function getSellerById(id, sellers) {
+return sellers.find(seller => seller.id === id);
+}
+function getProductsByCategoryId(categoryId, products) {
+return products.filter(product => product.categoryId === categoryId);
+}
+function getProductsBySellerId(sellerId, products) {
+return products.filter(product => product.sellerId === sellerId);
+}
+function getIcon(name) {
+const icons = {
+'chevron-right': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9,18 15,12 9,6"></polyline></svg>',
+'home': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9,22 9,12 15,12 15,22"></polyline></svg>',
+'search': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>',
+'menu': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>',
+'x': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>',
+'shopping-bag': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path><path d="M3 6h18"></path><path d="M16 10a4 4 0 0 1-8 0"></path></svg>',
+'star': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon></svg>',
+'map-pin': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>',
+'phone': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>',
+'mail': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>',
+'facebook': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>',
+'twitter': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z"></path></svg>',
+'linkedin': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>',
+'instagram': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="m16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>',
+'arrow-right': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>',
+'trending-up': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,7 13.5,15.5 8.5,10.5 2,17"></polyline><polyline points="16,7 22,7 22,13"></polyline></svg>',
+'package': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27,6.96 12,12.01 20.73,6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>',
+'shield': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
+'filter': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"></polygon></svg>',
+'chevron-down': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,9 12,15 18,9"></polyline></svg>',
+'chevron-up': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18,15 12,9 6,15"></polyline></svg>',
+'layout-grid': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+'list': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>',
+'clock': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12,6 12,12 16,14"></polyline></svg>',
+'phone-call': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>',
+'calendar': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>',
+'external-link': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15,3 21,3 21,9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>',
+'grid': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+'list-filter': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M7 12h10"></path><path d="M10 18h4"></path></svg>'
+};
+return icons[name] || '';
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// State management
+window.appState = window.appState || {
+currentRoute: '/',
+isMenuOpen: false,
+searchQuery: '',
+filters: {},
+viewMode: 'grid'
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function setState(newState) {
+window.appState = { ...window.appState, ...newState };
+render();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Router
+function navigate(path) {
+try {
+window.location.hash = path;
+window.appState = { ...window.appState, currentRoute: path };
+render();
+} catch (error) {
+console.error('Navigation error:', error);
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function getCurrentRoute() {
+try {
+return window.location.hash.slice(1) || '/';
+} catch (error) {
+console.error('Error getting current route:', error);
+return '/';
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Components
+function Navbar() {
+return `
+<header class="bg-blue-900 text-white shadow-md sticky top-0 z-50">
+<div class="container mx-auto px-4">
+<div class="flex items-center justify-between py-4">
+<!-- Logo -->
+<a href="#/" class="flex items-center space-x-2" onclick="event.preventDefault(); navigate('/');">
+<div class="icon-xl text-amber-400">${getIcon('shopping-bag')}</div>
+<span class="text-2xl font-bold">BizBazaar.com</span>
+</a>
+<!-- Search Bar - Desktop -->
+<div class="hidden md:flex flex-1 max-w-xl mx-8">
+<form onsubmit="handleSearch(event)" class="w-full">
+<div class="relative">
+<input type="text" placeholder="Search products, suppliers..." class="w-full py-2 px-4 pr-10 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400" value="${window.appState.searchQuery}" onchange="setState({searchQuery: event.target.value})" />
+<button type="submit" class="absolute right-0 top-0 h-full px-3 text-gray-600 hover:text-gray-800">
+<div class="icon">${getIcon('search')}</div>
+</button>
+</div>
+</form>
+</div>
+<!-- Navigation - Desktop -->
+<nav class="hidden md:flex items-center space-x-6">
+<a href="#/categories" class="hover:text-amber-300 transition-colors" onclick="event.preventDefault(); navigate('/categories');">Categories</a>
+<a href="#/sellers" class="hover:text-amber-300 transition-colors" onclick="event.preventDefault(); navigate('/sellers');">Sellers</a>
+<a href="#/request-quote" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md transition-colors" onclick="event.preventDefault(); navigate('/request-quote');">Request Quote</a>
+</nav>
+<!-- Mobile menu button -->
+<button onclick="setState({isMenuOpen: !window.appState.isMenuOpen})" class="md:hidden text-white focus:outline-none" aria-label="Toggle menu">
+<div class="icon">${window.appState.isMenuOpen ? getIcon('x') : getIcon('menu')}</div>
+</button>
+</div>
+<!-- Search Bar - Mobile -->
+<div class="md:hidden pb-4">
+<form onsubmit="handleSearch(event)" class="w-full">
+<div class="relative">
+<input type="text" placeholder="Search products, suppliers..." class="w-full py-2 px-4 pr-10 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-amber-400" value="${window.appState.searchQuery}" onchange="setState({searchQuery: event.target.value})" />
+<button type="submit" class="absolute right-0 top-0 h-full px-3 text-gray-600 hover:text-gray-800">
+<div class="icon">${getIcon('search')}</div>
+</button>
+</div>
+</form>
+</div>
+<!-- Mobile Navigation Menu -->
+${window.appState.isMenuOpen ? `
+<nav class="md:hidden bg-blue-800 py-4 px-2 rounded-md my-2">
+<ul class="flex flex-col space-y-3">
+<li><a href="#/categories" class="block py-2 px-4 hover:bg-blue-700 rounded-md transition-colors" onclick="event.preventDefault(); navigate('/categories'); setState({isMenuOpen: false});">Categories</a></li>
+<li><a href="#/sellers" class="block py-2 px-4 hover:bg-blue-700 rounded-md transition-colors" onclick="event.preventDefault(); navigate('/sellers'); setState({isMenuOpen: false});">Sellers</a></li>
+<li><a href="#/request-quote" class="block py-2 px-4 bg-amber-500 hover:bg-amber-600 rounded-md transition-colors" onclick="event.preventDefault(); navigate('/request-quote'); setState({isMenuOpen: false});">Request Quote</a></li>
+</ul>
+</nav>
+` : ''}
+</div>
+</header>
+`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Footer() {
+return `
+<footer class="bg-gray-800 text-white pt-12 pb-6">
+<div class="container mx-auto px-8 max-w-6xl">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+<!-- Company Info -->
+<div>
+<h3 class="text-xl font-semibold mb-4">BizBazaar.com</h3>
+<p class="text-gray-300 mb-4">India's leading marketplace for beverage equipment, connecting buyers with quality suppliers across the country.</p>
+<div class="flex space-x-4">
+<a href="#" class="text-gray-300 hover:text-white transition-colors"><div class="icon">${getIcon('facebook')}</div></a>
+<a href="#" class="text-gray-300 hover:text-white transition-colors"><div class="icon">${getIcon('twitter')}</div></a>
+<a href="#" class="text-gray-300 hover:text-white transition-colors"><div class="icon">${getIcon('linkedin')}</div></a>
+<a href="#" class="text-gray-300 hover:text-white transition-colors"><div class="icon">${getIcon('instagram')}</div></a>
+</div>
+</div>
+<!-- Quick Links -->
+<div>
+<h3 class="text-xl font-semibold mb-4">Quick Links</h3>
+<ul class="space-y-2">
+<li><a href="#/" class="text-gray-300 hover:text-white transition-colors" onclick="event.preventDefault(); navigate('/');">Home</a></li>
+<li><a href="#/categories" class="text-gray-300 hover:text-white transition-colors" onclick="event.preventDefault(); navigate('/categories');">Categories</a></li>
+<li><a href="#/about" class="text-gray-300 hover:text-white transition-colors" onclick="event.preventDefault(); navigate('/about');">About Us</a></li>
+<li><a href="#/contact" class="text-gray-300 hover:text-white transition-colors" onclick="event.preventDefault(); navigate('/contact');">Contact</a></li>
+</ul>
+</div>
+<!-- Categories -->
+<div>
+<h3 class="text-xl font-semibold mb-4">Our Categories</h3>
+<ul class="space-y-2">
+<li><a href="#/categories/coffee-vending-machines" class="text-gray-300 hover:text-white transition-colors" onclick="event.preventDefault(); navigate('/categories/coffee-vending-machines');">Coffee Vending Machines</a></li>
+</ul>
+</div>
+<!-- Contact Information -->
+<div>
+<h3 class="text-xl font-semibold mb-4">Contact Us</h3>
+<ul class="space-y-3">
+<li class="flex items-start">
+<div class="icon mt-0.5 text-gray-400 mr-2">${getIcon('map-pin')}</div>
+<span class="text-gray-300">123 Business Park, Sector 5,<br />Noida, UP 201301, India</span>
+</li>
+<li class="flex items-center">
+<div class="icon text-gray-400 mr-2">${getIcon('phone')}</div>
+<span class="text-gray-300">+91 1234567890</span>
+</li>
+<li class="flex items-center">
+<div class="icon text-gray-400 mr-2">${getIcon('mail')}</div>
+<span class="text-gray-300">contact@bizbazaar.com</span>
+</li>
+</ul>
+</div>
+</div>
+<hr class="border-gray-700 my-8" />
+<!-- Bottom Footer -->
+<div class="flex flex-col md:flex-row justify-between items-center">
+<p class="text-gray-400 text-sm mb-4 md:mb-0">&copy; ${new Date().getFullYear()} BizBazaar.com. All rights reserved.</p>
+<div class="flex flex-wrap justify-center space-x-4">
+<a href="#/privacy-policy" class="text-gray-400 hover:text-white text-sm transition-colors" onclick="event.preventDefault(); navigate('/privacy-policy');">Privacy Policy</a>
+<a href="#/terms-of-service" class="text-gray-400 hover:text-white text-sm transition-colors" onclick="event.preventDefault(); navigate('/terms-of-service');">Terms of Service</a>
+</div>
+</div>
+</div>
+</footer>
+`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function Breadcrumb(items) {
+return `
+<nav class="breadcrumb-nav py-4 px-6 text-gray-600 text-sm bg-gray-50 border-b border-gray-200">
+<ol class="flex items-center flex-wrap gap-2">
+<li class="flex items-center flex-shrink-0">
+<a href="#/" class="flex items-center hover:text-blue-600 transition-colors" onclick="event.preventDefault(); navigate('/');">
+<div class="icon-sm mr-2">${getIcon('home')}</div>
+<span>Home</span>
+</a>
+</li>
+${items.map((item, index) => `
+<li class="flex items-center">
+<div class="icon-sm mx-2 text-gray-400 flex-shrink-0">${getIcon('chevron-right')}</div>
+${index === items.length - 1 ? `
+<span class="font-medium text-gray-800">${item.label}</span>
+` : `
+<a href="#${item.path}" class="hover:text-blue-600 transition-colors" onclick="event.preventDefault(); navigate('${item.path}');">${item.label}</a>
+`}
+</li>
+`).join('')}
+</ol>
+</nav>
+`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CategoryCard(category) {
+return `
+<a href="#/categories/${category.id}" class="block group" onclick="event.preventDefault(); navigate('/categories/${category.id}');">
+<div class="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
+<div class="relative h-48 overflow-hidden">
+<img src="${category.image}" alt="${category.name}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent"></div>
+<h3 class="absolute bottom-4 left-4 text-white font-bold text-xl">${category.name}</h3>
+</div>
+<div class="p-4">
+<p class="text-gray-600 text-sm h-12 overflow-hidden">${category.description}</p>
+</div>
+</div>
+</a>
+`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ProductCard(product, seller, viewMode = 'grid') {
+if (viewMode === 'list') {
+return `
+<div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+<div class="flex">
+<!-- Product Image -->
+<div class="w-48 h-40 flex-shrink-0">
+<a href="#/products/${product.id}" onclick="event.preventDefault(); navigate('/products/${product.id}');">
+<div class="w-full h-full bg-gray-100 flex items-center justify-center p-2">
+${product.images && product.images.length > 0 ? `
+<img src="${product.images[0]}" alt="${product.name}" class="w-full h-full object-contain transition-transform duration-500 hover:scale-105" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+<div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium" style="display:none;">No Image</div>
+` : `
+<div class="text-gray-500 text-sm font-medium">No Image</div>
+`}
+</div>
+</a>
+</div>
+<!-- Product Details -->
+<div class="flex-1 p-4 flex flex-col justify-between">
+<div>
+<a href="#/products/${product.id}" class="block group" onclick="event.preventDefault(); navigate('/products/${product.id}');">
+<h3 class="text-lg font-semibold text-gray-800 group-hover:text-blue-700 transition-colors leading-tight mb-2">${product.name}</h3>
+</a>
+<div class="mb-3">
+<p class="font-bold text-xl ${product.price === 0 ? 'text-blue-600' : 'text-gray-900'}">${formatCurrency(product.price)}</p>
+</div>
+<!-- Key Specifications -->
+<div class="mb-4 bg-gray-50 rounded-md p-4">
+<h4 class="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Specifications</h4>
+<div class="grid grid-cols-3 gap-4">
+${product.specifications.slice(0, 3).map(spec => `
+<div class="bg-white p-2 rounded shadow-sm">
+<div class="text-xs text-gray-500 mb-1">${spec.name}</div>
+<div class="text-sm font-medium text-gray-800">${spec.value}</div>
+</div>
+`).join('')}
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<a href="#/sellers/${seller.id}" class="flex items-center group" onclick="event.preventDefault(); navigate('/sellers/${seller.id}');">
+<div class="bg-blue-100 text-blue-800 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm font-semibold flex-shrink-0">${seller.name.charAt(0)}</div>
+<div class="min-w-0 flex-1">
+<p class="text-sm font-medium group-hover:text-blue-700 transition-colors truncate">${seller.name}</p>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="icon-sm text-amber-500 flex-shrink-0">${getIcon('star')}</div>
+<span class="text-xs text-gray-600 flex-shrink-0 min-w-[55px] whitespace-nowrap">${seller.rating}/5</span>
+</div>
+<span class="text-xs text-gray-500 truncate">${seller.location}</span>
+</div>
+</div>
+</a>
+<div class="flex flex-col gap-2 ml-4">
+<button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors">Contact Supplier</button>
+<button class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-md transition-colors">Get Quote</button>
+</div>
+</div>
+</div>
+</div>
+`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Grid view (default)
+return `
+<div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+<a href="#/products/${product.id}" onclick="event.preventDefault(); navigate('/products/${product.id}');">
+<div class="relative h-48 overflow-hidden bg-gray-100 flex items-center justify-center p-2">
+${product.images && product.images.length > 0 ? `
+<img src="${product.images[0]}" alt="${product.name}" class="w-full h-full object-contain transition-transform duration-500 hover:scale-105" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+<div class="absolute inset-0 bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium" style="display:none;">No Image</div>
+` : `
+<div class="text-gray-500 text-sm font-medium">No Image</div>
+`}
+</div>
+</a>
+<div class="p-4">
+<a href="#/products/${product.id}" class="block group" onclick="event.preventDefault(); navigate('/products/${product.id}');">
+<h3 class="text-lg font-semibold text-gray-800 group-hover:text-blue-700 transition-colors leading-tight mb-2">${truncateText(product.name, 40)}</h3>
+</a>
+<div class="mb-3">
+<p class="font-semibold text-lg ${product.price === 0 ? 'text-blue-600' : 'text-gray-900'}">${formatCurrency(product.price)}</p>
+</div>
+<!-- Specifications -->
+<div class="bg-gray-50 rounded-md p-3 mb-3">
+<h4 class="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">Specifications</h4>
+<div class="divide-y divide-gray-200">
+${product.specifications.slice(0, 3).map(spec => `
+<div class="py-2">
+<div class="flex justify-between items-center">
+<span class="text-sm text-gray-600">${spec.name}</span>
+<span class="text-sm font-medium text-gray-800">${spec.value}</span>
+</div>
+</div>
+`).join('')}
+</div>
+</div>
+<div class="pt-3 border-t border-gray-100">
+<a href="#/sellers/${seller.id}" class="flex items-center group" onclick="event.preventDefault(); navigate('/sellers/${seller.id}');">
+<div class="bg-blue-100 text-blue-800 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm font-semibold flex-shrink-0">${seller.name.charAt(0)}</div>
+<div class="min-w-0 flex-1">
+<p class="text-sm font-medium group-hover:text-blue-700 transition-colors truncate">${seller.name}</p>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="icon-sm text-amber-500 flex-shrink-0">${getIcon('star')}</div>
+<span class="text-xs text-gray-600 flex-shrink-0 min-w-[55px] whitespace-nowrap">${seller.rating}/5</span>
+</div>
+<span class="text-xs text-gray-500 truncate">${seller.location}</span>
+</div>
+</div>
+</a>
+</div>
+</div>
+</div>
+`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function HomePage() {
+return `
+<div>
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-blue-900 to-blue-700 text-white py-16 md:py-24">
+<div class="container mx-auto px-8 max-w-6xl">
+<div class="max-w-3xl mx-auto text-center">
+<h1 class="text-3xl md:text-5xl font-bold mb-6">India's Leading Beverage Equipment Marketplace</h1>
+<p class="text-lg md:text-xl text-blue-100 mb-8">Connect with trusted suppliers of premium Coffee Vending Machine.</p>
+<div class="bg-white rounded-lg shadow-lg overflow-hidden mx-4 md:mx-0">
+<form class="flex flex-col md:flex-row" onsubmit="handleSearch(event)">
+<input type="text" placeholder="Search for equipment..." class="flex-1 p-4 outline-none text-gray-700" />
+<select class="p-4 bg-gray-50 border-t md:border-t-0 md:border-l border-gray-200 outline-none text-gray-700 md:w-1/3">
+<option>All Categories</option>
+${categories.map(category => `<option value="${category.id}">${category.name}</option>`).join('')}
+</select>
+<button type="submit" class="bg-amber-500 hover:bg-amber-600 text-white p-4 transition-colors md:w-auto w-full">
+<div class="icon mx-auto">${getIcon('search')}</div>
+</button>
+</form>
+</div>
+</div>
+</div>
+</section>
+<!-- Categories Section -->
+<section class="py-12 md:py-16 bg-gray-50">
+<div class="container mx-auto px-8 max-w-6xl">
+<div class="flex justify-between items-center mb-8">
+<h2 class="text-2xl md:text-3xl font-bold text-gray-800">Our Categories</h2>
+<a href="#/categories" class="text-blue-600 hover:text-blue-800 flex items-center font-medium" onclick="event.preventDefault(); navigate('/categories');">
+View All <div class="icon-sm ml-1">${getIcon('arrow-right')}</div>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+${categories.map(category => CategoryCard(category)).join('')}
+</div>
+</div>
+</section>
+<!-- Why Choose Us Section -->
+<section class="py-12 md:py-16">
+<div class="container mx-auto px-8 max-w-6xl">
+<div class="text-center mb-12">
+<h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">Why Choose BizBazaar.com</h2>
+<p class="text-gray-600 max-w-2xl mx-auto">We connect businesses with verified suppliers of premium beverage equipment across India.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="bg-white p-6 rounded-lg shadow-sm text-center">
+<div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+<div class="icon-xl text-blue-600">${getIcon('trending-up')}</div>
+</div>
+<h3 class="text-xl font-semibold mb-3">Quality Equipment</h3>
+<p class="text-gray-600">Access premium beverage equipment from trusted manufacturers and suppliers.</p>
+</div>
+<div class="bg-white p-6 rounded-lg shadow-sm text-center">
+<div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+<div class="icon-xl text-blue-600">${getIcon('package')}</div>
+</div>
+<h3 class="text-xl font-semibold mb-3">Verified Suppliers</h3>
+<p class="text-gray-600">All suppliers are thoroughly verified to ensure quality and reliability.</p>
+</div>
+<div class="bg-white p-6 rounded-lg shadow-sm text-center">
+<div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+<div class="icon-xl text-blue-600">${getIcon('shield')}</div>
+</div>
+<h3 class="text-xl font-semibold mb-3">Expert Support</h3>
+<p class="text-gray-600">Get professional guidance and support for all your equipment needs.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CategoryPage() {
+  return `
+    <div class="bg-gray-50 min-h-screen">
+      ${Breadcrumb([{ path: '/categories', label: 'Categories' }])}
+      <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+          <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">Browse Categories</h1>
+            <p class="text-gray-600">Explore our wide range of industrial equipment categories</p>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ${categories.map(category => CategoryCard(category)).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function CategoryDetailPage(categoryId) {
+  const category = getCategoryById(categoryId, categories);
+  if (!category) {
+    return '<div class="container mx-auto px-4 py-8">Category not found</div>';
+  }
+  const categoryProducts = getProductsByCategoryId(categoryId, products);
+  
+  return `
+    <div class="bg-gray-50 min-h-screen">
+      ${Breadcrumb([
+        { label: 'Categories', path: '/categories' },
+        { label: category.name, path: `/categories/${category.id}` }
+      ])}
+      <div class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-800 mb-2">${category.name}</h1>
+          <p class="text-gray-600">${category.description}</p>
+        </div>
+        <!-- Product Listings -->
+        <div>
+          <!-- View Options -->
+          <div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div class="flex items-center gap-4">
+              <div class="flex items-center space-x-2">
+                <button class="p-1.5 rounded-md ${window.appState.viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}" onclick="setState({viewMode: 'grid'})">
+                  <div class="icon">${getIcon('layout-grid')}</div>
+                </button>
+                <button class="p-1.5 rounded-md ${window.appState.viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}" onclick="setState({viewMode: 'list'})">
+                  <div class="icon">${getIcon('list')}</div>
+                </button>
+              </div>
+              <span class="text-gray-600">Showing ${categoryProducts.length} products</span>
+            </div>
+          </div>
+          <!-- Products Grid -->
+          ${categoryProducts.length > 0 ? `
+            <div class="${window.appState.viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'space-y-4'}">
+              ${categoryProducts.map(product => `
+                <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <a href="#/products/${product.id}" onclick="event.preventDefault(); navigate('/products/${product.id}');">
+                    <div class="relative h-48 overflow-hidden bg-gray-100 flex items-center justify-center p-2">
+                      ${product.images && product.images.length > 0 ? `
+                        <img src="${product.images[0]}" alt="${product.name}" class="w-full h-full object-contain transition-transform duration-500 hover:scale-105" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                        <div class="absolute inset-0 bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium" style="display:none;">No Image</div>
+                      ` : `
+                        <div class="text-gray-500 text-sm font-medium">No Image</div>
+                      `}
+                    </div>
+                  </a>
+                  <div class="p-4">
+                    <a href="#/products/${product.id}" class="block group" onclick="event.preventDefault(); navigate('/products/${product.id}');">
+                      <h3 class="text-lg font-semibold text-gray-800 group-hover:text-blue-700 transition-colors leading-tight mb-2">${truncateText(product.name, 40)}</h3>
+                    </a>
+                    <div class="mb-3">
+                      <p class="font-semibold text-lg ${product.price === 0 ? 'text-blue-600' : 'text-gray-900'}">${formatCurrency(product.price)}</p>
+                    </div>
+                    <!-- Specifications -->
+                    <div class="bg-gray-50 rounded-md p-3 mb-3">
+                      <h4 class="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">Specifications</h4>
+                      <div class="divide-y divide-gray-200">
+                        ${product.specifications.slice(0, 3).map(spec => `
+                          <div class="py-2">
+                            <div class="flex justify-between items-center">
+                              <span class="text-sm text-gray-600">${spec.name}</span>
+                              <span class="text-sm font-medium text-gray-800">${spec.value}</span>
+                            </div>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                    <div class="pt-3 border-t border-gray-100">
+                      <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-md transition-colors">Request Quote</button>
+                    </div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div class="bg-white p-8 rounded-lg shadow-sm text-center">
+              <p class="text-gray-600">No products found in this category.</p>
+            </div>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function ProductDetailPage(productId) {
+  const product = products.find(p => p.id === parseInt(productId));
+  if (!product) {
+    return '<div class="container mx-auto px-8 max-w-7xl py-8">Product not found</div>';
+  }
+  const category = getCategoryById(product.categoryId, categories);
+  // CORRECTED: Use the sellerId from the product to find the correct seller
+  const seller = getSellerById(product.sellerId, sellers);
+  
+  return `
+    <div class="bg-gray-50 min-h-screen">
+      ${Breadcrumb([
+        { label: 'Categories', path: '/categories' },
+        { label: category?.name || 'Category', path: `/categories/${product.categoryId}` },
+        { label: product.name, path: `/products/${product.id}` }
+      ])}
+      <div class="container mx-auto px-8 max-w-7xl py-8">
+        <!-- Product Header -->
+        <div class="mb-8">
+          <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">${product.name}</h1>
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <span class="text-gray-600">Category:
+              <a href="#/categories/${product.categoryId}" class="ml-1 text-blue-600 hover:underline" onclick="event.preventDefault(); navigate('/categories/${product.categoryId}');">${category?.name}</a>
+            </span>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <!-- Left Panel - Product Images (4 columns) -->
+          <div class="lg:col-span-4">
+            <div class="w-full">
+              <!-- Main Image -->
+              <div class="border border-gray-200 rounded-lg overflow-hidden bg-white mb-4">
+                ${product.images && product.images.length > 0 ? `
+                  <div class="w-full h-80 md:h-96 flex items-center justify-center p-4">
+                    <img src="${product.images[0]}" alt="${product.name}" class="w-full h-full object-contain" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                    <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-lg font-medium" style="display:none;">No Image Available</div>
+                  </div>
+                ` : `
+                  <div class="w-full h-80 md:h-96 bg-gray-200 flex items-center justify-center text-gray-500 text-lg font-medium">No Image Available</div>
+                `}
+              </div>
+              <!-- Thumbnail Images -->
+              ${product.images && product.images.length > 1 ? `
+                <div class="flex space-x-2 overflow-x-auto pb-2">
+                  ${product.images.map((image, index) => `
+                    <div class="cursor-pointer border-2 rounded-md overflow-hidden h-20 w-20 flex-shrink-0 transition-all duration-200 border-gray-200 hover:border-gray-300 bg-gray-100 flex items-center justify-center">
+                      <img src="${image}" alt="${product.name} - thumbnail ${index + 1}" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                      <div class="text-gray-400 text-xs" style="display:none;">No Image</div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+          <!-- Center Panel - Product Specifications (5 columns) -->
+          <div class="lg:col-span-5">
+            <!-- Product Specifications -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 class="text-xl font-semibold text-gray-800 mb-4">Product Specifications</h2>
+              <div class="overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <tbody class="divide-y divide-gray-200">
+                    ${product.specifications.map(spec => `
+                      <tr>
+                        <td class="py-3 px-4 text-sm text-gray-600 bg-gray-50 w-1/3">${spec.name}</td>
+                        <td class="py-3 px-4 text-sm font-medium text-gray-800">${spec.value}</td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- Right Panel - Price & Seller Information (3 columns) -->
+          <div class="lg:col-span-3">
+            <!-- Price and Order Info -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+              <div class="mb-4">
+                <span class="text-gray-500 text-sm">Price</span>
+                <div class="text-2xl font-bold ${product.price === 0 ? 'text-blue-600' : 'text-gray-800'} mt-1">${formatCurrency(product.price)}</div>
+              </div>
+              <div class="space-y-3">
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-md transition-colors">Request Quote</button>
+                <button class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 rounded-md transition-colors">Contact Supplier</button>
+              </div>
+            </div>
+            <!-- Seller Information -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
+              <h3 class="text-lg font-semibold text-gray-800 mb-4">Seller Information</h3>
+              <div class="mb-4">
+                <div class="flex items-start">
+                  <div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold mr-3 flex-shrink-0">${seller.name.charAt(0)}</div>
+                  <div class="min-w-0 flex-1">
+                    <a href="#/sellers/${seller.id}" class="text-base font-semibold text-gray-800 hover:text-blue-600 transition-colors block leading-tight seller-info-text" onclick="event.preventDefault(); navigate('/sellers/${seller.id}');">${truncateText(seller.name, 20)}</a>
+                    <div class="flex items-center mt-1">
+                      <div class="icon-sm text-amber-500 flex-shrink-0 mr-1.5">${getIcon('star')}</div>
+                      <span class="text-xs text-gray-600 mr-3 flex-shrink-0">${seller.rating}/5</span>
+                      <span class="text-xs text-gray-500 truncate">${seller.location}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-3 mb-6">
+                <div class="flex items-start">
+                  <div class="icon-sm text-gray-400 mr-3 mt-0.5 flex-shrink-0">${getIcon('map-pin')}</div>
+                  <span class="text-sm text-gray-600 leading-relaxed seller-info-text">${seller.location}</span>
+                </div>
+                <div class="flex items-center">
+                  <div class="icon-sm text-gray-400 mr-3 flex-shrink-0">${getIcon('calendar')}</div>
+                  <span class="text-sm text-gray-600">Member since ${seller.memberSince}</span>
+                </div>
+                <div class="flex items-start">
+                  <div class="icon-sm text-gray-400 mr-3 mt-0.5 flex-shrink-0">${getIcon('phone-call')}</div>
+                  <span class="text-sm text-gray-600 seller-info-text">${seller.phone}</span>
+                </div>
+                <div class="flex items-start">
+                  <div class="icon-sm text-gray-400 mr-3 mt=0.5 flex-shrink-0">${getIcon('mail')}</div>
+                  <span class="text-sm text-gray-600 seller-info-text">${truncateText(seller.email, 20)}</span>
+                </div>
+                <div class="flex items-center">
+                  <span class="inline-block w-4 h-4 mr=3 text-center text-gray-400 text-xs flex-shrink-0">%</span>
+                  <span class="text-sm text-gray-600">Response Rate: ${seller.responseRate}%</span>
+                </div>
+              </div>
+              <div class="border-t border-gray-200 pt-4 mb-4">
+                <p class="text-gray-600 text-sm leading-relaxed seller-info-text">${truncateText(seller.description, 100)}</p>
+              </div>
+              <div class="space-y-3 btn-container">
+                <a href="#/sellers/${seller.id}" class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-7 transition-colors" onclick="event.preventDefault(); navigate('/sellers/${seller.id}');">
+                  <div class="icon-sm mr-2">${getIcon('external-link')}</div>
+                  View Full Profile
+                </a>
+                <button class="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">
+                  <div class="icon-sm mr-2">${getIcon('phone-call')}</div>
+                  Contact Seller
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SellerCatalogPage(sellerId) {
+const seller = getSellerById(sellerId, sellers);
+if (!seller) {
+return '<div class="container mx-auto px-4 py-8">Seller not found</div>';
+}
+const sellerProducts = getProductsBySellerId(sellerId, products);
+return `
+<div class="bg-gray-50 min-h-screen">
+${Breadcrumb([
+{ label: 'Sellers', path: '/sellers' },
+{ label: seller.name, path: `/sellers/${seller.id}` }
+])}
+<div class="container mx-auto px-4 py-8">
+<!-- Seller Information -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-8">
+<div class="flex items-start mb-4">
+<div class="bg-blue-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-semibold mr-4 flex-shrink-0">${seller.name.charAt(0)}</div>
+<div class="min-w-0 flex-1">
+<h2 class="text-2xl font-semibold text-gray-800 leading-tight mb-2">${seller.name}</h2>
+<div class="flex items-center flex-wrap">
+<div class="icon text-amber-500 mr-1">${getIcon('star')}</div>
+<span class="text-gray-600 mr-4">${seller.rating}/5</span>
+<div class="flex items-center text-gray-500">
+<div class="icon mr-1">${getIcon('map-pin')}</div>
+<span class="truncate">${seller.location}</span>
+</div>
+</div>
+</div>
+</div>
+<p class="mt-4 text-gray-600 leading-relaxed">${seller.description}</p>
+<div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-4">
+<h3 class="text-lg font-medium text-gray-800">Contact Information</h3>
+<div class="space-y-3">
+<div class="flex items-start">
+<div class="icon text-gray-400 mr-3 mt-0.5 flex-shrink-0">${getIcon('phone-call')}</div>
+<span class="text-gray-600 break-all">${seller.phone}</span>
+</div>
+<div class="flex items-start">
+<div class="icon text-gray-400 mr-3 mt-0.5 flex-shrink-0">${getIcon('mail')}</div>
+<span class="text-gray-600 break-all">${seller.email}</span>
+</div>
+<div class="flex items-start">
+<div class="icon text-gray-400 mr-3 mt-1 flex-shrink-0">${getIcon('map-pin')}</div>
+<span class="text-gray-600 leading-relaxed">${seller.address}</span>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<h3 class="text-lg font-medium text-gray-800">Business Details</h3>
+<div class="space-y-3">
+<div class="flex items-center">
+<div class="icon text-gray-400 mr-3 flex-shrink-0">${getIcon('calendar')}</div>
+<span class="text-gray-600">Member since ${seller.memberSince}</span>
+</div>
+<div class="flex items-center">
+<span class="inline-block w-5 h-5 mr-3 text-center text-gray-400 flex-shrink-0">%</span>
+<span class="text-gray-600">Response Rate: ${seller.responseRate}%</span>
+</div>
+<div class="flex items-center">
+<span class="inline-block w-5 h-5 mr-3 text-center text-gray-400 flex-shrink-0">👤</span>
+<span class="text-gray-600">Contact Person: ${seller.contactPerson}</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 flex flex-wrap gap-3">
+<button class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">Contact Seller</button>
+<button class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">Request Quote</button>
+</div>
+</div>
+<!-- Products Section -->
+<div class="mt-8">
+<div class="bg-white p-4 rounded-lg shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<h2 class="text-xl font-semibold text-gray-800">Products by ${seller.name}</h2>
+<div class="flex items-center gap-4">
+<div class="flex items-center space-x-2">
+<button class="p-1.5 rounded-md ${window.appState.viewMode === 'grid' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}" onclick="setState({viewMode: 'grid'})">
+<div class="icon">${getIcon('layout-grid')}</div>
+</button>
+<button class="p-1.5 rounded-md ${window.appState.viewMode === 'list' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}" onclick="setState({viewMode: 'list'})">
+<div class="icon">${getIcon('list')}</div>
+</button>
+</div>
+<span class="text-gray-600">Showing ${sellerProducts.length} products</span>
+</div>
+</div>
+<!-- Products Grid -->
+${sellerProducts.length > 0 ? `
+<div class="${window.appState.viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6' : 'space-y-4'}">
+${sellerProducts.map(product => ProductCard(product, seller, window.appState.viewMode)).join('')}
+</div>
+` : `
+<div class="bg-white p-8 rounded-lg shadow-sm text-center">
+<p class="text-gray-600">This seller doesn't have any products listed yet.</p>
+</div>
+`}
+</div>
+</div>
+</div>
+`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Event handlers
+function handleSearch(event) {
+event.preventDefault();
+console.log('Searching for:', window.appState.searchQuery);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function SellersPage() {
+  return `
+    <div class="bg-gray-50 min-h-screen">
+      ${Breadcrumb([{ label: 'Sellers', path: '/sellers' }])}
+      <div class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-800 mb-2">Our Sellers</h1>
+          <p class="text-gray-600">Connect with trusted suppliers of premium beverage equipment.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          ${sellers.map(seller => `
+            <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+              <div class="p-6">
+                <div class="flex items-start mb-4">
+                  <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-semibold mr-4 flex-shrink-0">${seller.name.charAt(0)}</div>
+                  <div class="min-w-0 flex-1">
+                    <a href="#/sellers/${seller.id}" onclick="event.preventDefault(); navigate('/sellers/${seller.id}');">
+                      <h3 class="text-lg font-semibold text-gray-800 hover:text-blue-600 transition-colors leading-tight mb-2">${seller.name}</h3>
+                    </a>
+                    <div class="flex items-center gap-4">
+                      <div class="flex items-center gap-2">
+                        <div class="icon-sm text-amber-500">${getIcon('star')}</div>
+                        <span class="text-sm text-gray-600">${seller.rating}/5</span>
+                      </div>
+                      <span class="text-sm text-gray-500">${seller.location}</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-gray-600 text-sm mb-4">${truncateText(seller.description, 100)}</p>
+                <div class="mt-4 flex gap-3">
+                  <a href="#/sellers/${seller.id}" class="flex-1 px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 text-center" onclick="event.preventDefault(); navigate('/sellers/${seller.id}');">View Profile</a>
+                  <button class="flex-1 px-4 py-2 text-sm font-medium rounded-md text-blue-600 bg-blue-50 hover:bg-blue-100">Contact</button>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+// Router function
+function getPageContent() {
+try {
+const route = getCurrentRoute();
+const parts = route.split('/');
+console.log('Current route:', route);
+console.log('Route parts:', parts);
+
+
+switch (parts[1]) {
+case '':
+case undefined:
+return HomePage();
+case 'categories':
+if (parts[2]) {
+console.log('Loading category detail page for:', parts[2]);
+const category = getCategoryById(parts[2], categories);
+if (!category) {
+console.error('Category not found:', parts[2]);
+return '<div class="container mx-auto px-4 py-8">Category not found</div>';
+}
+return CategoryDetailPage(parts[2]);
+}
+console.log('Loading categories page');
+return CategoryPage();
+case 'products':
+if (parts[2]) {
+return ProductDetailPage(parts[2]);
+}
+return '<div class="container mx-auto px-4 py-8">Products page</div>';
+case 'sellers':
+if (parts[2]) {
+return SellerCatalogPage(parts[2]);
+}
+return SellersPage();
+default:
+return '<div class="container mx-auto px-4 py-8">Page not found</div>';
+}
+} catch (error) {
+console.error('Error in getPageContent:', error);
+return '<div class="container mx-auto px-4 py-8">An error occurred</div>';
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Render function
+function render() {
+try {
+const app = document.getElementById('app');
+if (!app) {
+console.error('App element not found');
+return;
+}
+
+
+app.innerHTML = `
+${Navbar()}
+<main class="flex-grow">
+${getPageContent()}
+</main>
+${Footer()}
+`;
+
+
+// Re-initialize icons after render
+const icons = document.querySelectorAll('.icon, .icon-sm, .icon-lg, .icon-xl');
+icons.forEach(icon => {
+if (icon.innerHTML.includes('${getIcon(')) {
+const iconName = icon.innerHTML.match(/\$\{getIcon\('(.+?)'\)\}/)[1];
+icon.innerHTML = getIcon(iconName);
+}
+});
+
+
+console.log('Render complete');
+} catch (error) {
+console.error('Error in render:', error);
+const app = document.getElementById('app');
+if (app) {
+app.innerHTML = `
+<div class="min-h-screen bg-gray-50 flex items-center justify-center">
+<div class="text-center">
+<h1 class="text-2xl font-bold text-gray-800 mb-4">Something went wrong</h1>
+<p class="text-gray-600">Please try refreshing the page</p>
+</div>
+</div>
+`;
+}
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Initialize app
+function init() {
+try {
+// Set up initial app state
+window.appState = window.appState || {
+currentRoute: getCurrentRoute(),
+viewMode: 'grid',
+searchQuery: '',
+isMenuOpen: false,
+filters: {}
+};
+
+
+// Add event listeners
+window.addEventListener('hashchange', () => {
+window.appState = { ...window.appState, currentRoute: getCurrentRoute() };
+render();
+});
+
+
+// Handle initial load
+render();
+
+
+console.log('App initialized with state:', window.appState);
+} catch (error) {
+console.error('Error initializing app:', error);
+}
+}
+
+
+// Start the app
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
